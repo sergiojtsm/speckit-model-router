@@ -1,0 +1,39 @@
+{
+  "name": "speckit-model-router",
+  "version": "0.1.0",
+  "description": "Pick a model per spec-kit (SDD) step in opencode. Set once, applies to every project, per-user.",
+  "type": "module",
+  "bin": {
+    "speckit-model-router": "dist/cli/index.js"
+  },
+  "main": "dist/plugin/router.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test \"test/**/*.test.ts\"",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@opencode-ai/plugin": "^1.0.0",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  },
+  "keywords": [
+    "opencode",
+    "speckit",
+    "spec-kit",
+    "sdd",
+    "plugin",
+    "cli"
+  ],
+  "license": "MIT"
+}
