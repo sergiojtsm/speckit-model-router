@@ -59,7 +59,9 @@ export function renderTable({ steps, assignments, cursor, width }: RenderTablePa
   writeln(
     pc.dim("  ↑↓ navigate   ") +
       pc.dim("Enter select model   ") +
+      pc.dim("Supr clear (not set)   ") +
       pc.dim("S save & exit   ") +
-      pc.dim("Q quit"),
+      pc.dim("Q quit   ") +
+      pc.dim("U uninstall"),
   );
 }

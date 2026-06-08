@@ -7,15 +7,83 @@ import { evaluateChecks } from "../core/checks.ts";
 import { buildModelMap, assignmentsForSteps } from "../core/modelMap.ts";
 
 import { checkTool, getOpencodeModels } from "./adapters/opencode.ts";
-import { readModelMap, writeModelMap } from "./adapters/modelsStore.ts";
-import { isPluginInstalled, isPluginUpToDate, installPlugin } from "./adapters/pluginInstaller.ts";
-import { MODELS_FILE } from "./adapters/paths.ts";
+import { readModelMap, writeModelMap, deleteModelMap } from "./adapters/modelsStore.ts";
+import {
+  isPluginInstalled,
+  isPluginUpToDate,
+  installPlugin,
+  uninstallPlugin,
+} from "./adapters/pluginInstaller.ts";
+import { MODELS_FILE, PLUGIN_DEST } from "./adapters/paths.ts";
 
 import { clear, writeln, runWithSpinner } from "./ui/terminal.ts";
 import { renderChecksSection } from "./ui/checks-view.ts";
 import { runAssignmentScreen } from "./ui/assignment-screen.ts";
+import { confirmModal } from "./ui/confirm.ts";
 
-export async function run(): Promise<void> {
+/**
+ * Remove the plugin file and the model map — a full revert with no residue.
+ * When `skipConfirm` is false a confirmation modal is shown first.
+ * Returns true if the uninstall ran, false if the user cancelled.
+ */
+export async function runUninstall(skipConfirm: boolean): Promise<boolean> {
+  if (!skipConfirm) {
+    const confirmed = await confirmModal({
+      title: "Uninstall speckit-model-router",
+      lines: [
+        "This will delete, with no residue:",
+        `  ${pc.dim("• " + PLUGIN_DEST)}`,
+        `  ${pc.dim("• " + MODELS_FILE)}`,
+        "",
+        pc.dim("Your opencode.json and other plugins are left untouched."),
+      ],
+      question: "Delete everything and revert?",
+    });
+    if (!confirmed) {
+      clear();
+      writeln();
+      writeln(`  ${pc.yellow("Cancelled.")} Nothing was removed.\n`);
+      return false;
+    }
+  }
+
+  const removedPlugin = uninstallPlugin();
+  const removedModels = deleteModelMap();
+
+  clear();
+  writeln();
+  writeln(`  ${pc.bold("speckit")} ${pc.cyan("model router")} ${pc.dim("— uninstall")}`);
+  writeln();
+  writeln(
+    removedPlugin
+      ? `  ${pc.green("✓")} removed plugin   ${pc.dim(PLUGIN_DEST)}`
+      : `  ${pc.dim("–")} plugin not present   ${pc.dim(PLUGIN_DEST)}`,
+  );
+  writeln(
+    removedModels
+      ? `  ${pc.green("✓")} removed models   ${pc.dim(MODELS_FILE)}`
+      : `  ${pc.dim("–")} models not present   ${pc.dim(MODELS_FILE)}`,
+  );
+  writeln();
+  if (removedPlugin) {
+    writeln(
+      `  ${pc.yellow("↻ Restart opencode once")} ${pc.dim("to unload the plugin from memory.")}`,
+    );
+  } else {
+    writeln(`  ${pc.dim("Nothing to revert — already clean.")}`);
+  }
+  writeln();
+  return true;
+}
+
+export async function run(argv: string[] = process.argv.slice(2)): Promise<void> {
+  // ── Uninstall path (CLI flag) ──────────────────────────────────────────
+  if (argv.includes("--uninstall")) {
+    const skipConfirm = argv.includes("--yes") || argv.includes("-y");
+    await runUninstall(skipConfirm);
+    return;
+  }
+
   clear();
   writeln();
   writeln(`  ${pc.bold("speckit")} ${pc.cyan("model router")}`);
@@ -66,22 +134,28 @@ export async function run(): Promise<void> {
   writeln(pc.dim("  Press Enter on any row to pick a model. S to save.\n"));
   await new Promise((r) => setTimeout(r, 600));
 
-  const finalAssignments = await runAssignmentScreen({
+  const result = await runAssignmentScreen({
     models,
     steps: SDD_STEPS,
     existingAssignments,
   });
 
-  // ── 5. Save & summary ──────────────────────────────────────────────────
+  // ── 5. Handle the outcome ──────────────────────────────────────────────
+  if (result.action === "uninstall") {
+    // Already confirmed inside the TUI; run the revert without re-asking.
+    await runUninstall(true);
+    return;
+  }
+
   clear();
   writeln();
 
-  if (!finalAssignments) {
+  if (result.action === "cancel") {
     writeln(`  ${pc.yellow("Cancelled.")} No changes saved.\n`);
     process.exit(0);
   }
 
-  const map = buildModelMap(finalAssignments, SDD_STEPS);
+  const map = buildModelMap(result.assignments, SDD_STEPS);
   writeModelMap(map);
 
   writeln(`  ${pc.green("✓")} ${pc.bold("Saved")}  ${pc.dim(MODELS_FILE)}`);

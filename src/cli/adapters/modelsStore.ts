@@ -1,7 +1,7 @@
 // Adapter for reading/writing ~/.config/opencode/speckit-models.json.
 // The only place that touches the model map file on disk.
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { OPENCODE_CONFIG_DIR, MODELS_FILE } from "./paths.ts";
 import { parseModelMap, serializeModelMap, type ModelMap } from "../../core/modelMap.ts";
 
@@ -19,4 +19,14 @@ export function readModelMap(): ModelMap {
 export function writeModelMap(map: ModelMap): void {
   mkdirSync(OPENCODE_CONFIG_DIR, { recursive: true });
   writeFileSync(MODELS_FILE, serializeModelMap(map), "utf8");
+}
+
+/**
+ * Delete the per-user model map file. Returns true if a file was removed,
+ * false if there was nothing to remove. Leaves the config dir untouched.
+ */
+export function deleteModelMap(): boolean {
+  if (!existsSync(MODELS_FILE)) return false;
+  rmSync(MODELS_FILE, { force: true });
+  return true;
 }

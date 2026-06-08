@@ -95,11 +95,36 @@ The CLI runs a pre-flight check and tells you exactly what's missing.
 | ↑ / ↓ | Move between rows / models |
 | Enter | Open model search (table) / confirm (modal) |
 | Type | Filter models (in the modal) |
+| Delete / Backspace | Clear the selected step (back to default — "not set"). On the **"Model for all"** row it clears **every** step. |
 | S | Save and exit |
 | Q | Quit without saving |
+| U | Uninstall / revert everything (asks to confirm) |
 | Esc | Close the model modal without choosing |
 
 The top **"Model for all"** row applies one model to every step at once.
+
+A step set to **"not set"** has no override: that `/speckit.*` command simply runs
+on whatever model you have selected — the native default.
+
+---
+
+## Uninstall / revert
+
+To remove everything with no residue — the global plugin file and your model
+map — run:
+
+```
+npx speckit-model-router --uninstall
+```
+
+It asks for confirmation first; add `--yes` (or `-y`) to skip the prompt in
+scripts. You can also press **U** inside the TUI. It deletes exactly two files:
+
+- `~/.config/opencode/plugins/speckit-model-router.js`
+- `~/.config/opencode/speckit-models.json`
+
+Your `opencode.json` and any other plugins are left untouched. Restart opencode
+once afterwards to unload the plugin from memory.
 
 ---
 

@@ -58,3 +58,18 @@ export function assignmentsForSteps(map: ModelMap, steps: readonly SddStep[]): M
   }
   return out;
 }
+
+/**
+ * Return a copy of the map with one step's override removed (back to default =
+ * no entry). Never mutates the input. Missing keys are a no-op.
+ */
+export function withStepCleared(map: ModelMap, key: string): ModelMap {
+  const out: ModelMap = { ...map };
+  delete out[key];
+  return out;
+}
+
+/** An empty model map — every step back to default (no overrides). */
+export function clearedAll(): ModelMap {
+  return {};
+}

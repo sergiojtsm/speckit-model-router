@@ -6,6 +6,8 @@ import {
   parseModelMap,
   serializeModelMap,
   assignmentsForSteps,
+  withStepCleared,
+  clearedAll,
 } from "../src/core/modelMap.ts";
 import type { SddStep } from "../src/core/steps.ts";
 
@@ -76,4 +78,23 @@ test("serializeModelMap: pretty + trailing newline, round-trips", () => {
 test("assignmentsForSteps: only steps present in map", () => {
   const map = { "speckit.plan": "g/p", "speckit.implement": "a/b" };
   assert.deepEqual(assignmentsForSteps(map, STEPS), { "speckit.plan": "g/p" });
+});
+
+test("withStepCleared: removes one key, does not mutate input", () => {
+  const map = { "speckit.plan": "g/p", "speckit.tasks": "a/b" };
+  const out = withStepCleared(map, "speckit.plan");
+  assert.deepEqual(out, { "speckit.tasks": "a/b" });
+  // original untouched
+  assert.deepEqual(map, { "speckit.plan": "g/p", "speckit.tasks": "a/b" });
+});
+
+test("withStepCleared: missing key is a no-op (still a copy)", () => {
+  const map = { "speckit.plan": "g/p" };
+  const out = withStepCleared(map, "speckit.tasks");
+  assert.deepEqual(out, { "speckit.plan": "g/p" });
+  assert.notEqual(out, map);
+});
+
+test("clearedAll: returns an empty map", () => {
+  assert.deepEqual(clearedAll(), {});
 });

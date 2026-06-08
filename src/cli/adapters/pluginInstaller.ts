@@ -2,7 +2,7 @@
 // We copy a single self-contained file (no opencode.json edits) so opencode
 // auto-loads it from the global plugins directory on next start.
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { PLUGINS_DIR, PLUGIN_DEST } from "./paths.ts";
@@ -48,4 +48,15 @@ export function installPlugin(): string {
   mkdirSync(PLUGINS_DIR, { recursive: true });
   writeFileSync(PLUGIN_DEST, src, "utf8");
   return PLUGIN_DEST;
+}
+
+/**
+ * Remove the installed plugin file from the global plugins dir.
+ * Returns true if a file was removed, false if there was nothing to remove.
+ * Leaves the plugins directory and everything else untouched.
+ */
+export function uninstallPlugin(): boolean {
+  if (!existsSync(PLUGIN_DEST)) return false;
+  rmSync(PLUGIN_DEST, { force: true });
+  return true;
 }
