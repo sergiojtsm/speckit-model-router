@@ -16,32 +16,60 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
 
-const MODELS_FILE = join(homedir(), ".config", "opencode", "speckit-models.json");
+// Only spec-kit commands are routed.
+const SPECKIT_PREFIX = "speckit.";
+const MODELS_FILENAME = "speckit-models.json";
+
+// Resolve opencode's config dir. MUST stay in sync with
+// src/cli/adapters/paths.ts:resolveConfigDir() — this file is copied standalone
+// into the plugins dir and cannot import from the package.
+function resolveConfigDir(): string {
+  const override = process.env.OPENCODE_CONFIG_DIR?.trim();
+  if (override) return override;
+  return join(homedir(), ".config", "opencode");
+}
+
+function modelsFile(): string {
+  return join(resolveConfigDir(), MODELS_FILENAME);
+}
 
 // Suppression of the original command after re-dispatch:
 //   "throw"  → no extra LLM call (cleanest execution); may surface a transient error toast.
 //   "empty"  → no error toast; the original makes one cheap empty turn.
 const SUPPRESS: "throw" | "empty" = "throw";
 
-function readModelFor(command: string): string | null {
-  let raw: string;
-  try {
-    raw = readFileSync(MODELS_FILE, "utf8");
-  } catch {
-    return null; // no config yet
-  }
+/**
+ * Read the configured model for a command from the model map on disk.
+ * Defensive: returns null on a missing file, invalid JSON, wrong shape, a
+ * non-string value, or a value that is not a "provider/model" id. Ignores
+ * dangerous keys (__proto__, etc.) implicitly — the value is only ever read,
+ * never assigned to an object.
+ */
+export function readModelForFrom(jsonText: string | null | undefined, command: string): string | null {
+  if (!jsonText) return null;
   let parsed: unknown;
   try {
-    parsed = JSON.parse(raw);
+    parsed = JSON.parse(jsonText);
   } catch {
     return null;
   }
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return null;
+  if (!Object.prototype.hasOwnProperty.call(parsed, command)) return null;
   const value = (parsed as Record<string, unknown>)[command];
   if (typeof value !== "string") return null;
   const slash = value.indexOf("/");
   if (slash <= 0 || slash >= value.length - 1) return null; // must be "provider/model"
   return value;
+}
+
+function readModelFor(command: string): string | null {
+  let raw: string;
+  try {
+    raw = readFileSync(modelsFile(), "utf8");
+  } catch {
+    return null; // no config yet
+  }
+  return readModelForFrom(raw, command);
 }
 
 export const SpeckitModelRouter: Plugin = async ({ client }) => {
@@ -51,7 +79,7 @@ export const SpeckitModelRouter: Plugin = async ({ client }) => {
   return {
     "command.execute.before": async (input: any, output: any) => {
       const command: string = input?.command ?? "";
-      if (!command.startsWith("speckit.")) return;
+      if (!command.startsWith(SPECKIT_PREFIX)) return;
 
       const guardKey = `${input.sessionID}::${command}`;
       if (inFlight.has(guardKey)) {
@@ -63,6 +91,7 @@ export const SpeckitModelRouter: Plugin = async ({ client }) => {
       if (!model) return; // no per-step override configured → native behaviour
 
       inFlight.add(guardKey);
+      let dispatched = false;
       try {
         await client.session.command({
           path: { id: input.sessionID },
@@ -72,10 +101,14 @@ export const SpeckitModelRouter: Plugin = async ({ client }) => {
             model,
           },
         });
+        dispatched = true;
       } catch {
+        // Re-dispatch failed → clean up the guard and let the original run.
         inFlight.delete(guardKey);
-        return; // re-dispatch failed → fall back to letting the original run
+        return;
       }
+
+      if (!dispatched) return;
 
       // Suppress the original so the step doesn't also run on the default model.
       if (SUPPRESS === "throw") {

@@ -14,10 +14,19 @@
     "build": "tsc",
     "test": "node --test \"test/**/*.test.ts\"",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run typecheck && npm test && npm run build"
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "author": "Sergio Juntas Moreno <sergiojuntasmoreno@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sergiojtsm/speckit-model-router.git"
+  },
+  "homepage": "https://github.com/sergiojtsm/speckit-model-router#readme",
+  "bugs": {
+    "url": "https://github.com/sergiojtsm/speckit-model-router/issues"
   },
   "dependencies": {
     "picocolors": "^1.1.1"

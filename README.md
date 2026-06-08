@@ -1,5 +1,9 @@
 # speckit-model-router
 
+[![CI](https://github.com/sergiojtsm/speckit-model-router/actions/workflows/ci.yml/badge.svg)](https://github.com/sergiojtsm/speckit-model-router/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/speckit-model-router.svg)](https://www.npmjs.com/package/speckit-model-router)
+[![license](https://img.shields.io/npm/l/speckit-model-router.svg)](./LICENSE)
+
 Pick which **AI model** runs each [spec-kit](https://github.com/github/spec-kit)
 (SDD) step in [opencode](https://opencode.ai). Set it once, globally, **per
 user** — it then applies to every project automatically, with the **native**
