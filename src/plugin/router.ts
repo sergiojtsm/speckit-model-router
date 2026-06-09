@@ -17,13 +17,16 @@ import { join } from "node:path";
 import { homedir } from "node:os";
 
 // Only spec-kit commands are routed.
-const SPECKIT_PREFIX = "speckit.";
-const MODELS_FILENAME = "speckit-models.json";
+// NOTE: these three values are duplicated from the CLI side (paths.ts / steps.ts /
+// modelMap.ts) because this file is copied standalone into the plugins dir and
+// cannot import from the package. test/guard.test.ts asserts both copies agree.
+export const SPECKIT_PREFIX = "speckit.";
+export const MODELS_FILENAME = "speckit-models.json";
 
 // Resolve opencode's config dir. MUST stay in sync with
 // src/cli/adapters/paths.ts:resolveConfigDir() — this file is copied standalone
 // into the plugins dir and cannot import from the package.
-function resolveConfigDir(): string {
+export function resolveConfigDir(): string {
   const override = process.env.OPENCODE_CONFIG_DIR?.trim();
   if (override) return override;
   return join(homedir(), ".config", "opencode");
