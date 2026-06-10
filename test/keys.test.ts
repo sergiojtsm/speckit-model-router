@@ -19,9 +19,10 @@ test("decodeKey: regression left/right arrows are unknown (not down)", () => {
   assert.equal(decodeKey("\x1b[C"), "unknown");
 });
 
-test("decodeKey: backspace variants", () => {
+test("decodeKey: backspace variants (incl. forward Delete / Supr)", () => {
   assert.equal(decodeKey("\x7f"), "backspace");
   assert.equal(decodeKey("\b"), "backspace");
+  assert.equal(decodeKey("\x1b[3~"), "backspace"); // Supr / forward Delete
 });
 
 test("decodeKey: printable chars", () => {

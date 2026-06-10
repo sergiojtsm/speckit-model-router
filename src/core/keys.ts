@@ -16,7 +16,8 @@ export function decodeKey(key: string): KeyAction {
   if (key === "\r" || key === "\n") return "enter";
   if (key === "\x1b[A") return "up";
   if (key === "\x1b[B") return "down";
-  if (key === "\x7f" || key === "\b") return "backspace";
+  // Backspace (\x7f, \b) and the forward Delete / "Supr" key (\x1b[3~) both clear.
+  if (key === "\x7f" || key === "\b" || key === "\x1b[3~") return "backspace";
   if (key.length === 1 && key >= " ") return "char";
   return "unknown";
 }
