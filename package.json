@@ -1,6 +1,6 @@
 {
   "name": "speckit-model-router",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Pick a model per spec-kit (SDD) step in opencode. Set once, applies to every project, per-user.",
   "type": "module",
   "bin": {
