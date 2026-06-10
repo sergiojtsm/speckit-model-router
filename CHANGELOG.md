@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-06-10
+
+### Changed
+- Releases are now published automatically from GitHub Actions with npm
+  **provenance** (SLSA) when a `v*` tag is pushed.
+
 ## [0.1.0] - 2026-06-08
 
 ### Added
@@ -23,5 +29,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cross-platform tool detection (`which`/`where`, no shell) — Windows code path
   is in place but not yet verified.
 
-[Unreleased]: https://github.com/sergiojtsm/speckit-model-router/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/sergiojtsm/speckit-model-router/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/sergiojtsm/speckit-model-router/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/sergiojtsm/speckit-model-router/releases/tag/v0.1.0
