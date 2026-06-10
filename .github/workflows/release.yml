@@ -1,11 +1,15 @@
 name: Release
 
-# Publishes to npm with provenance whenever a version tag (v*) is pushed.
-#   git tag v0.1.0 && git push origin v0.1.0
+# Full release pipeline. On every version tag (v*) push it:
+#   1. builds + tests + publishes to npm with provenance (SLSA)
+#   2. creates the matching GitHub Release with notes from CHANGELOG.md
 #
-# Requires repository secret NPM_TOKEN (an npm Automation token).
-# id-token: write enables npm provenance (SLSA) — proves the package was built
-# from this repo by this workflow.
+#   npm version patch        # bumps package.json + creates the tag
+#   git push --follow-tags   # triggers this workflow
+#
+# Requires repository secret NPM_TOKEN (npm granular token, bypass-2FA, scoped
+# to this package). id-token: write enables npm provenance; contents: write
+# lets the workflow create the GitHub Release.
 
 on:
   push:
@@ -13,11 +17,11 @@ on:
       - "v*"
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
 
 jobs:
-  publish:
+  release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,3 +40,25 @@ jobs:
         run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Extract release notes from CHANGELOG
+        id: notes
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          NOTES_FILE="$(mktemp)"
+          awk -v v="$VERSION" '
+            $0 ~ "^## \\[" v "\\]" { f = 1; next }
+            f && /^## \[/ { exit }
+            f { print }
+          ' CHANGELOG.md > "$NOTES_FILE"
+          # Fallback if the version has no CHANGELOG section yet.
+          if [ ! -s "$NOTES_FILE" ]; then
+            printf 'Release %s\n' "$VERSION" > "$NOTES_FILE"
+          fi
+          printf '\n📦 https://www.npmjs.com/package/speckit-model-router/v/%s\n' "$VERSION" >> "$NOTES_FILE"
+          echo "file=$NOTES_FILE" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file "${{ steps.notes.outputs.file }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
